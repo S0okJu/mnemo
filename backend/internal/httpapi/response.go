@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/S0okJu/mnemo/backend/internal/calendar"
 	"github.com/S0okJu/mnemo/backend/internal/workspace"
 )
 
@@ -35,6 +36,10 @@ func writeError(w http.ResponseWriter, err error) {
 	case errors.Is(err, workspace.ErrExists):
 		writeJSONError(w, http.StatusConflict, err.Error())
 	case errors.Is(err, workspace.ErrInvalidName):
+		writeJSONError(w, http.StatusBadRequest, err.Error())
+	case errors.Is(err, calendar.ErrNotFound):
+		writeJSONError(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, calendar.ErrInvalidTask), errors.Is(err, calendar.ErrDocumentNotFound):
 		writeJSONError(w, http.StatusBadRequest, err.Error())
 	default:
 		log.Printf("httpapi: internal error: %v", err)

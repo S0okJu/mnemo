@@ -7,11 +7,18 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/S0okJu/mnemo/backend/internal/calendar"
 	"github.com/S0okJu/mnemo/backend/internal/profile"
 	"github.com/S0okJu/mnemo/backend/internal/workspace"
 )
 
 func newTestServer(t *testing.T) (*httptest.Server, *workspace.Manager) {
+	t.Helper()
+	srv, docs, _ := newTestServerWithCalendar(t)
+	return srv, docs
+}
+
+func newTestServerWithCalendar(t *testing.T) (*httptest.Server, *workspace.Manager, *calendar.Service) {
 	t.Helper()
 	dataDir := t.TempDir()
 	profiles := profile.NewManager(dataDir)
@@ -19,10 +26,11 @@ func newTestServer(t *testing.T) (*httptest.Server, *workspace.Manager) {
 		t.Fatalf("Bootstrap() error = %v", err)
 	}
 	docs := workspace.NewManager(profiles.WorkspaceDir(profile.UserProfileName))
+	tasks := calendar.NewService(dataDir+"/calendars/user.json", docs)
 
-	srv := httptest.NewServer(NewRouter(profiles, docs))
+	srv := httptest.NewServer(NewRouter(profiles, docs, tasks))
 	t.Cleanup(srv.Close)
-	return srv, docs
+	return srv, docs, tasks
 }
 
 func doJSON(t *testing.T, method, url string, body any) *http.Response {
