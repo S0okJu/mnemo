@@ -42,6 +42,31 @@
   cursor: default;
 }
 
+.modeToggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--muted);
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.modeToggle:hover {
+  background: var(--hover-bg);
+}
+
+.modeToggleActive {
+  background: var(--active-bg);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
 .editor textarea {
   font-family: ui-monospace, "SF Mono", monospace;
   font-size: 0.9rem;
