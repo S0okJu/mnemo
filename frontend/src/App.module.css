@@ -1,0 +1,22 @@
+.appShell {
+  display: grid;
+  grid-template-columns: 64px 240px 1fr;
+  height: 100vh;
+  background: var(--bg);
+}
+
+.content {
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.editorPane {
+  padding: 1.75rem 2rem;
+  max-width: 1100px;
+}
+
+.error {
+  color: #c0392b;
+  padding: 1rem 2rem 0;
+  margin: 0;
+}

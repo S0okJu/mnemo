@@ -1,0 +1,144 @@
+.wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.6;
+  font-size: 0.95rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  min-height: 60vh;
+}
+
+.content:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
+  scroll-margin-top: 1rem;
+  line-height: 1.3;
+}
+
+.content h1 {
+  font-size: 1.6rem;
+  margin: 1.4rem 0 0.6rem;
+}
+
+.content h2 {
+  font-size: 1.3rem;
+  margin: 1.3rem 0 0.5rem;
+}
+
+.content h3 {
+  font-size: 1.1rem;
+  margin: 1.1rem 0 0.4rem;
+}
+
+.content h1:first-child,
+.content h2:first-child,
+.content h3:first-child {
+  margin-top: 0;
+}
+
+.content p {
+  margin: 0.6rem 0;
+}
+
+.content a {
+  color: var(--accent);
+}
+
+.content code {
+  font-family: ui-monospace, "SF Mono", monospace;
+  background: var(--hover-bg);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.85em;
+}
+
+.content pre {
+  background: var(--hover-bg);
+  border-radius: 8px;
+  padding: 0.75rem;
+  overflow-x: auto;
+}
+
+.content pre code {
+  background: none;
+  padding: 0;
+}
+
+.content blockquote {
+  margin: 0.6rem 0;
+  padding: 0.1rem 0 0.1rem 0.9rem;
+  border-left: 3px solid var(--border);
+  color: var(--muted);
+}
+
+.content ul,
+.content ol {
+  padding-left: 1.4rem;
+}
+
+.content table {
+  border-collapse: collapse;
+  margin: 0.6rem 0;
+}
+
+.content th,
+.content td {
+  border: 1px solid var(--border);
+  padding: 0.35rem 0.6rem;
+}
+
+.outline {
+  width: 200px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+}
+
+.outlineTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.outline ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.outline button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.outline button:hover {
+  background: var(--hover-bg);
+}
