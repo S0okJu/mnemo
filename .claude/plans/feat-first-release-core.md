@@ -15,7 +15,7 @@ calendar task requires linking an existing document. Full design in
 ## Sub-tasks (1 PR each)
 
 - [x] Backend scaffolding + data layer (Profile Manager, Workspace Manager, frontmatter, tests) — PR: branch `feat/backend-scaffolding` (not pushed/opened yet)
-- [ ] Document REST API (`/api/profiles/user/documents*`) — PR: (not opened yet)
+- [x] Document REST API (`/api/profiles/user/documents*`) — PR: branch `feat/document-rest-api` (not pushed/opened yet)
 - [ ] Calendar REST API (`/api/profiles/user/calendar*`, doc-link validation) — PR: (not opened yet)
 - [ ] Svelte frontend (editor, workspace list, calendar view) — PR: (not opened yet)
 
@@ -30,6 +30,13 @@ calendar task requires linking an existing document. Full design in
   `go test ./...` all clean; binary smoke-tested to confirm it creates
   `profiles/user/workspace/` on first run. Not yet pushed/PR'd — holding for user confirmation
   before pushing to the remote.
+- 2026-08-30 — Sub-task 2 done on `feat/document-rest-api`: `internal/httpapi` (stdlib
+  `net/http.ServeMux` with Go 1.22+ method+pattern routing, no external router dep) exposing
+  `GET /api/profiles` and full CRUD on `/api/profiles/user/documents*`; error mapping from
+  workspace sentinel errors to 404/409/400/500. `httptest`-based integration tests cover
+  create/get/update/delete/list, duplicate name (409), invalid name (400), invalid JSON body
+  (400), and missing document (404). `cmd/mnemo` now runs an actual HTTP server
+  (`MNEMO_ADDR`, default `:8080`). Manually curl-tested end to end. Not yet pushed/PR'd.
 
 ## Issues & Resolutions
 
