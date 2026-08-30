@@ -1,13 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { api, ApiError, type Document, type Task } from "./lib/api";
-  import WorkspaceList from "./lib/WorkspaceList.svelte";
+  import NavRail from "./lib/NavRail.svelte";
+  import FileTree from "./lib/FileTree.svelte";
   import Editor from "./lib/Editor.svelte";
-  import Calendar from "./lib/Calendar.svelte";
+  import TasksView from "./lib/TasksView.svelte";
+  import CalendarView from "./lib/CalendarView.svelte";
+
+  type View = "tasks" | "calendar";
 
   let documents = $state<Document[]>([]);
   let tasks = $state<Task[]>([]);
   let selectedName = $state<string | null>(null);
+  let activeView = $state<View>("tasks");
   let error = $state<string | null>(null);
 
   let selectedDoc = $derived(
@@ -41,6 +46,11 @@
     selectedName = name;
   }
 
+  function selectView(view: View) {
+    selectedName = null;
+    activeView = view;
+  }
+
   function createDocument(name: string, title: string) {
     run(async () => {
       await api.createDocument(name, title, "");
@@ -66,9 +76,9 @@
     });
   }
 
-  function createTask(title: string, documentName: string) {
+  function createTask(title: string, documentName: string, due?: string) {
     run(async () => {
-      await api.createTask(title, documentName);
+      await api.createTask(title, documentName, due);
       await refreshTasks();
     });
   }
@@ -88,54 +98,50 @@
   }
 </script>
 
-<main>
-  <h1>mnemo</h1>
+<div class="app-shell">
+  <NavRail active={activeView} onSelect={selectView} />
+  <FileTree
+    {documents}
+    {selectedName}
+    onSelect={selectDocument}
+    onCreate={createDocument}
+    onDelete={deleteDocument}
+  />
+  <main class="content">
+    {#if error}
+      <p class="error">{error}</p>
+    {/if}
 
-  {#if error}
-    <p class="error">{error}</p>
-  {/if}
-
-  <div class="layout">
-    <aside>
-      <WorkspaceList
-        {documents}
-        {selectedName}
-        onSelect={selectDocument}
-        onCreate={createDocument}
-        onDelete={deleteDocument}
-      />
-      <Calendar
-        {tasks}
-        {documents}
-        onCreate={createTask}
-        onToggle={toggleTask}
-        onDelete={deleteTask}
-      />
-    </aside>
-    <section class="editor-pane">
-      <Editor doc={selectedDoc} onSave={saveDocument} />
-    </section>
-  </div>
-</main>
+    {#if selectedDoc}
+      <div class="editor-pane">
+        <Editor doc={selectedDoc} onSave={saveDocument} />
+      </div>
+    {:else if activeView === "tasks"}
+      <TasksView {tasks} {documents} onCreate={createTask} onToggle={toggleTask} onDelete={deleteTask} />
+    {:else}
+      <CalendarView {tasks} {documents} onCreate={createTask} onToggle={toggleTask} onDelete={deleteTask} />
+    {/if}
+  </main>
+</div>
 
 <style>
-  main {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 1rem;
-  }
-  .layout {
+  .app-shell {
     display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 1.5rem;
-    align-items: start;
+    grid-template-columns: 64px 240px 1fr;
+    height: 100vh;
+    background: var(--bg);
   }
-  aside {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+  .content {
+    overflow-y: auto;
+    min-width: 0;
+  }
+  .editor-pane {
+    padding: 1.75rem 2rem;
+    max-width: 900px;
   }
   .error {
     color: #c0392b;
+    padding: 1rem 2rem 0;
+    margin: 0;
   }
 </style>
