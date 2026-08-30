@@ -1,0 +1,10 @@
+mnemo-data/
+backend/mnemo-data/
+
+# Go
+/backend/mnemo
+*.test
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
