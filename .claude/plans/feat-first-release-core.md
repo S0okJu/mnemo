@@ -1,7 +1,7 @@
 # Mnemo First Release Core (Profile/Workspace/Calendar MVP)
 
 - **Branch:** `feat/first-release-core`
-- **Status:** in-progress
+- **Status:** in-progress (all sub-tasks implemented locally; none pushed/PR'd/merged to `main` yet)
 - **Created:** 2026-08-30
 
 ## Goal
