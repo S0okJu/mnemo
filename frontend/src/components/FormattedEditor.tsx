@@ -75,14 +75,56 @@ function setCaretOffsetFromEnd(container: HTMLElement, offsetFromEnd: number) {
   selection?.addRange(range);
 }
 
-// The element directly under `container` that holds the caret — contentEditable
-// represents each line/paragraph as one of these top-level children.
+// The element holding the caret that block-level rules should act on:
+// either a top-level child of `container` (contentEditable represents each
+// line/paragraph as one of these), or an `<li>` if the caret is nested
+// inside a list — an `<li>`'s own text is what a marker like "> " gets
+// typed into, and it needs to be treated as its own block so that marker
+// can convert it (see `replaceListItemBlock`).
 function getBlockElement(container: HTMLElement, node: Node): HTMLElement | null {
   let current: Node | null = node;
-  while (current && current.parentNode !== container) {
+  while (current && current !== container) {
+    if (current.parentNode === container) {
+      return current instanceof HTMLElement ? current : null;
+    }
+    if (current instanceof HTMLElement && current.tagName === "LI") {
+      return current;
+    }
     current = current.parentNode;
   }
-  return current instanceof HTMLElement ? current : null;
+  return null;
+}
+
+// Converting a list item into something else (heading, quote, hr, ...)
+// can't just replace it in place — a non-<li> direct child of a <ul>/<ol>
+// is invalid structurally. Instead split the list around it: everything
+// before the item keeps its own list, everything after gets another, and
+// the converted node(s) go in between (either half is omitted if empty).
+function replaceListItemBlock(li: HTMLElement, converted: Node[]) {
+  const list = li.parentElement;
+  if (!list) {
+    li.replaceWith(...converted);
+    return;
+  }
+
+  const items = [...list.children];
+  const idx = items.indexOf(li);
+  const before = items.slice(0, idx);
+  const after = items.slice(idx + 1);
+
+  const pieces: Node[] = [];
+  if (before.length > 0) {
+    const head = list.cloneNode(false) as HTMLElement;
+    head.append(...before);
+    pieces.push(head);
+  }
+  pieces.push(...converted);
+  if (after.length > 0) {
+    const tail = list.cloneNode(false) as HTMLElement;
+    tail.append(...after);
+    pieces.push(tail);
+  }
+  list.replaceWith(...pieces);
 }
 
 // Converts a freshly-typed block-starting marker ("# ", "- ", "1. ", "> ")
@@ -108,7 +150,7 @@ function setTextOrPlaceholder(el: HTMLElement, text: string) {
   }
 }
 
-function applyBlockRule(block: HTMLElement): HTMLElement | null {
+function applyBlockRule(block: HTMLElement): HTMLElement[] | null {
   if (ALREADY_SPECIAL_TAGS.has(block.tagName)) return null;
   const text = block.textContent ?? "";
 
@@ -116,25 +158,31 @@ function applyBlockRule(block: HTMLElement): HTMLElement | null {
   if (heading) {
     const el = document.createElement(`h${heading[1].length}`);
     setTextOrPlaceholder(el, heading[2]);
-    return el;
+    return [el];
   }
 
-  const bullet = /^[-*]\s+(.*)$/s.exec(text);
-  if (bullet) {
-    const ul = document.createElement("ul");
-    const li = document.createElement("li");
-    setTextOrPlaceholder(li, bullet[1]);
-    ul.append(li);
-    return ul;
-  }
+  // Skip re-matching "- "/"1. " on a block that's already a list item —
+  // being inside a <li> already satisfies that, so retyping the marker
+  // (e.g. from pasted text) would otherwise split the list around a
+  // redundant single-item list instead of just leaving it alone.
+  if (block.tagName !== "LI") {
+    const bullet = /^[-*]\s+(.*)$/s.exec(text);
+    if (bullet) {
+      const ul = document.createElement("ul");
+      const li = document.createElement("li");
+      setTextOrPlaceholder(li, bullet[1]);
+      ul.append(li);
+      return [ul];
+    }
 
-  const ordered = /^\d+\.\s+(.*)$/s.exec(text);
-  if (ordered) {
-    const ol = document.createElement("ol");
-    const li = document.createElement("li");
-    setTextOrPlaceholder(li, ordered[1]);
-    ol.append(li);
-    return ol;
+    const ordered = /^\d+\.\s+(.*)$/s.exec(text);
+    if (ordered) {
+      const ol = document.createElement("ol");
+      const li = document.createElement("li");
+      setTextOrPlaceholder(li, ordered[1]);
+      ol.append(li);
+      return [ol];
+    }
   }
 
   const quote = /^>\s+(.*)$/s.exec(text);
@@ -143,20 +191,42 @@ function applyBlockRule(block: HTMLElement): HTMLElement | null {
     const p = document.createElement("p");
     setTextOrPlaceholder(p, quote[1]);
     blockquote.append(p);
-    return blockquote;
+    return [blockquote];
+  }
+
+  // A void element, so it can't hold a caret — the trailing empty paragraph
+  // gives typing somewhere to continue after the rule.
+  const hr = /^(-{3,}|\*{3,}|_{3,})$/.exec(text);
+  if (hr) {
+    const rule = document.createElement("hr");
+    const next = document.createElement("p");
+    next.append(document.createElement("br"));
+    return [rule, next];
   }
 
   return null;
 }
 
+function tagWithText(name: "strong" | "em" | "code", text: string): HTMLElement {
+  const el = document.createElement(name);
+  el.textContent = text;
+  return el;
+}
+
+function strongEm(text: string): HTMLElement {
+  const strong = document.createElement("strong");
+  strong.append(tagWithText("em", text));
+  return strong;
+}
+
 interface InlineRule {
   re: RegExp;
-  tag: "strong" | "em" | "code";
   // Capture group holding the boundary character before the opening marker
   // (empty string at the very start of the text), or null for markers like
   // `` ` `` that don't need one.
   boundaryGroup: number | null;
   innerGroup: number;
+  build: (text: string) => HTMLElement;
 }
 
 // Converts an inline span that was just closed right at the caret
@@ -164,26 +234,65 @@ interface InlineRule {
 // is anchored at the end of the pre-caret text and, for the single-marker
 // forms, requires the character before the opening marker not to be the
 // same marker — otherwise "**bold**" would also spuriously match italic's
-// single-"*" pattern on its inner "*bold*" substring.
+// single-"*" pattern on its inner "*bold*" substring. The triple-marker
+// (bold+italic) rules are checked first for the same reason: "***x***"
+// would otherwise partially satisfy the plain bold or italic pattern.
 const INLINE_RULES: InlineRule[] = [
-  { re: /(^|[^*])\*\*([^*\n]+)\*\*$/, tag: "strong", boundaryGroup: 1, innerGroup: 2 },
-  { re: /(^|[^_])__([^_\n]+)__$/, tag: "strong", boundaryGroup: 1, innerGroup: 2 },
-  { re: /`([^`\n]+)`$/, tag: "code", boundaryGroup: null, innerGroup: 1 },
-  { re: /(^|[^*])\*([^*\n]+)\*$/, tag: "em", boundaryGroup: 1, innerGroup: 2 },
-  { re: /(^|[^_])_([^_\n]+)_$/, tag: "em", boundaryGroup: 1, innerGroup: 2 },
+  { re: /(^|[^*])\*\*\*([^*\n]+)\*\*\*$/, boundaryGroup: 1, innerGroup: 2, build: strongEm },
+  { re: /(^|[^_])___([^_\n]+)___$/, boundaryGroup: 1, innerGroup: 2, build: strongEm },
+  { re: /(^|[^*])\*\*([^*\n]+)\*\*$/, boundaryGroup: 1, innerGroup: 2, build: (t) => tagWithText("strong", t) },
+  { re: /(^|[^_])__([^_\n]+)__$/, boundaryGroup: 1, innerGroup: 2, build: (t) => tagWithText("strong", t) },
+  { re: /`([^`\n]+)`$/, boundaryGroup: null, innerGroup: 1, build: (t) => tagWithText("code", t) },
+  { re: /(^|[^*])\*([^*\n]+)\*$/, boundaryGroup: 1, innerGroup: 2, build: (t) => tagWithText("em", t) },
+  { re: /(^|[^_])_([^_\n]+)_$/, boundaryGroup: 1, innerGroup: 2, build: (t) => tagWithText("em", t) },
 ];
+
+const LINK_RULE = /\[([^\]\n]+)\]\(([^)\s]+)\)$/;
+
+// Replaces `node`'s text from `markerStart` to `caret` with `el`, then parks
+// the caret just past it. A caret placed in a *genuinely empty* text node
+// right after `el` doesn't reliably stick in Chrome: since an empty node
+// renders no visible position, the next typed character lands back inside
+// `el`'s own text instead (verified — every further character kept nesting
+// one level deeper). A zero-width space gives that spacer node real,
+// addressable content so the caret has somewhere unambiguous to sit;
+// `htmlToMarkdown` strips it back out before saving.
+function replaceInlineSpan(node: Text, markerStart: number, caret: number, el: HTMLElement, selection: Selection) {
+  const editRange = document.createRange();
+  editRange.setStart(node, markerStart);
+  editRange.setEnd(node, caret);
+  editRange.deleteContents();
+  editRange.insertNode(el);
+
+  const spacer = document.createTextNode("​");
+  el.after(spacer);
+  const after = document.createRange();
+  after.setStart(spacer, 1);
+  after.collapse(true);
+  selection.removeAllRanges();
+  selection.addRange(after);
+}
 
 function applyInlineRule(container: HTMLElement): boolean {
   const selection = window.getSelection();
   if (!selection || selection.rangeCount === 0) return false;
   const range = selection.getRangeAt(0);
   if (!range.collapsed || range.endContainer.nodeType !== Node.TEXT_NODE) return false;
-  const node = range.endContainer;
+  const node = range.endContainer as Text;
   if (!container.contains(node)) return false;
 
   const text = node.textContent ?? "";
   const caret = range.endOffset;
   const before = text.slice(0, caret);
+
+  const link = LINK_RULE.exec(before);
+  if (link) {
+    const a = document.createElement("a");
+    a.href = link[2];
+    a.textContent = link[1];
+    replaceInlineSpan(node, link.index, caret, a, selection);
+    return true;
+  }
 
   for (const rule of INLINE_RULES) {
     const match = rule.re.exec(before);
@@ -192,29 +301,7 @@ function applyInlineRule(container: HTMLElement): boolean {
     const inner = match[rule.innerGroup];
     const boundary = rule.boundaryGroup !== null ? match[rule.boundaryGroup] : "";
     const markerStart = match.index + boundary.length;
-
-    const editRange = document.createRange();
-    editRange.setStart(node, markerStart);
-    editRange.setEnd(node, caret);
-    editRange.deleteContents();
-    const el = document.createElement(rule.tag);
-    el.textContent = inner;
-    editRange.insertNode(el);
-
-    // A caret placed in a *genuinely empty* text node right after `el`
-    // doesn't reliably stick in Chrome: since an empty node renders no
-    // visible position, the next typed character lands back inside `el`'s
-    // own text instead (verified — every further character kept nesting
-    // one level deeper). A zero-width space gives that spacer node real,
-    // addressable content so the caret has somewhere unambiguous to sit;
-    // `htmlToMarkdown` strips it back out before saving.
-    const spacer = document.createTextNode("​");
-    el.after(spacer);
-    const after = document.createRange();
-    after.setStart(spacer, 1);
-    after.collapse(true);
-    selection.removeAllRanges();
-    selection.addRange(after);
+    replaceInlineSpan(node, markerStart, caret, rule.build(inner), selection);
     return true;
   }
   return false;
@@ -268,8 +355,16 @@ const FormattedEditor = forwardRef<FormattedEditorHandle, Props>(function Format
     const converted = applyBlockRule(block);
     if (converted) {
       const offsetFromEnd = getCaretOffsetFromEnd(block);
-      block.replaceWith(converted);
-      if (offsetFromEnd !== null) setCaretOffsetFromEnd(converted, offsetFromEnd);
+      if (block.tagName === "LI") {
+        replaceListItemBlock(block, converted);
+      } else {
+        block.replaceWith(...converted);
+      }
+      // Caret lands in the last new node — for a single element that's the
+      // only choice; for hr's [<hr>, <p>] pair it's the trailing paragraph,
+      // the only one of the two that can actually hold a caret.
+      const target = converted[converted.length - 1];
+      if (offsetFromEnd !== null && target) setCaretOffsetFromEnd(target, offsetFromEnd);
       refreshHeadings();
       return;
     }
