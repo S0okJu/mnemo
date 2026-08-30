@@ -17,7 +17,7 @@ calendar task requires linking an existing document. Full design in
 - [x] Backend scaffolding + data layer (Profile Manager, Workspace Manager, frontmatter, tests) — PR: branch `feat/backend-scaffolding` (not pushed/opened yet)
 - [x] Document REST API (`/api/profiles/user/documents*`) — PR: branch `feat/document-rest-api` (not pushed/opened yet)
 - [x] Calendar REST API (`/api/profiles/user/calendar*`, doc-link validation) — PR: branch `feat/calendar-rest-api` (not pushed/opened yet)
-- [ ] Svelte frontend (editor, workspace list, calendar view) — PR: (not opened yet)
+- [x] Svelte frontend (editor, workspace list, calendar view) — PR: branch `feat/frontend-mvp` (not pushed/opened yet)
 
 ## Progress Log
 
@@ -45,11 +45,36 @@ calendar task requires linking an existing document. Full design in
   case. `cmd/mnemo` now wires the calendar service to `calendars/user.json`. Curl-tested end to
   end: POSTing a task with a bogus `document_name` returns 400, a real one returns 201. Not yet
   pushed/PR'd.
+- 2026-08-30 — Sub-task 4 done on `feat/frontend-mvp`: Vite + Svelte 5 (runes) + TypeScript app —
+  `lib/api.ts` (typed REST client), `WorkspaceList.svelte` (list/create/delete documents),
+  `Editor.svelte` (edit title/body, Save), `Calendar.svelte` (list tasks, toggle done/delete, and
+  a "new task" form whose document `<select>` is a required field populated from existing
+  documents — enforces the doc-link requirement at the UI level, matching the backend's
+  `ErrDocumentNotFound` rejection). Deviated from the plan's "wire CORS on the backend" with a
+  Vite dev-server proxy (`/api` → `localhost:8080`) instead — same local-dev outcome, zero
+  backend changes; CORS headers would only matter if frontend/backend end up served from
+  different origins in production, which is out of scope for now. `npm run check` (svelte-check +
+  tsc) and `npm run build` both clean. Verified at the network level: ran the Go backend and the
+  Vite dev server together and confirmed `GET /api/profiles` round-trips correctly through the
+  dev proxy. **Not verified in an actual browser** — no headless browser was available in this
+  environment; the user should click through the golden path (create a doc, edit and save it,
+  create a task linked to it, toggle it done) before considering this sub-task fully done.
 
 ## Issues & Resolutions
 
-_(none yet)_
+- **Issue:** No headless browser (Chromium/Playwright) available in the sandbox to visually
+  verify the frontend UI.
+  **Resolution:** Verified at the network/build level instead (type-check, production build,
+  live network round-trip through the Vite proxy to the real backend). Visual verification is
+  listed under Needs Human Attention.
 
 ## Needs Human Attention
 
-_(none yet)_
+- The frontend (branch `feat/frontend-mvp`) has not been clicked through in an actual browser.
+  Run `MNEMO_ADDR=:8080 go run ./cmd/mnemo` (from `backend/`) and `npm run dev` (from
+  `frontend/`), open http://localhost:5173, and confirm: create a document, edit + save it,
+  create a calendar task linked to it (the document picker is required), toggle it done, delete
+  both. Report back anything that looks or feels wrong.
+- None of the four sub-task branches have been pushed to `origin` or opened as GitHub PRs yet —
+  holding for explicit confirmation before pushing to the shared remote, per the user's own
+  push/PR safety preference.
