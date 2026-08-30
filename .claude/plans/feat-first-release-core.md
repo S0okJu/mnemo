@@ -68,6 +68,14 @@ calendar task requires linking an existing document. Full design in
   live network round-trip through the Vite proxy to the real backend). Visual verification is
   listed under Needs Human Attention.
 
+## Additional tooling
+
+- `scripts/e2e-smoke-test.sh` — builds the real backend binary, runs it against a throwaway data
+  dir, and curls the golden path plus key error cases (duplicate doc name → 409, path-traversal
+  name → 400, task linked to a missing document → 400, missing doc/task → 404). Automates the
+  manual curl checks done during sub-tasks 2-3. Backend-only; does not cover the Svelte UI (see
+  Needs Human Attention below for that). Run with `scripts/e2e-smoke-test.sh`.
+
 ## Needs Human Attention
 
 - The frontend (branch `feat/frontend-mvp`) has not been clicked through in an actual browser.
