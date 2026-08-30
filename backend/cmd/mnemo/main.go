@@ -1,13 +1,15 @@
-// Command mnemo bootstraps mnemo's local data directory. The HTTP API is
-// added in a later sub-task.
+// Command mnemo serves mnemo's REST API over the local data directory.
 package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/S0okJu/mnemo/backend/internal/httpapi"
 	"github.com/S0okJu/mnemo/backend/internal/profile"
+	"github.com/S0okJu/mnemo/backend/internal/workspace"
 )
 
 func main() {
@@ -30,7 +32,14 @@ func run() error {
 	if err := profiles.Bootstrap(); err != nil {
 		return err
 	}
+	docs := workspace.NewManager(profiles.WorkspaceDir(profile.UserProfileName))
 
-	log.Printf("mnemo data directory ready at %s", dataDir)
-	return nil
+	addr := os.Getenv("MNEMO_ADDR")
+	if addr == "" {
+		addr = ":8080"
+	}
+
+	mux := httpapi.NewRouter(profiles, docs)
+	log.Printf("mnemo listening on %s (data dir %s)", addr, dataDir)
+	return http.ListenAndServe(addr, mux)
 }
