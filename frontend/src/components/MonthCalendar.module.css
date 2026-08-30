@@ -1,0 +1,82 @@
+.monthCalendar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.header button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.header button:hover {
+  background: var(--hover-bg);
+}
+
+.weekdayRow,
+.weekRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.weekdayRow span {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+
+.cell:not(.emptyCell):hover {
+  background: var(--hover-bg);
+}
+
+.today .dayNumber {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.selected {
+  background: var(--active-bg);
+}
+
+.dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 2px;
+}
+
+.large .cell {
+  font-size: 0.95rem;
+}
+
+.large .dot {
+  width: 5px;
+  height: 5px;
+}

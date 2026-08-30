@@ -26,4 +26,4 @@
 
 ## 개발 
 
-Go  + TypeScript/Svelte + Local(DB는 추후 지원 예정) 
+Go  + TypeScript/React + Local(DB는 추후 지원 예정) 

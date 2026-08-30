@@ -10,7 +10,7 @@ create.
 ## Tech stack
 
 - Backend: Go
-- Frontend: TypeScript + Svelte
+- Frontend: TypeScript + React
 - Storage: local file system (DB support planned later)
 
 ## Go development
