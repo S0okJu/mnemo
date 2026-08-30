@@ -16,7 +16,7 @@ calendar task requires linking an existing document. Full design in
 
 - [x] Backend scaffolding + data layer (Profile Manager, Workspace Manager, frontmatter, tests) — PR: branch `feat/backend-scaffolding` (not pushed/opened yet)
 - [x] Document REST API (`/api/profiles/user/documents*`) — PR: branch `feat/document-rest-api` (not pushed/opened yet)
-- [ ] Calendar REST API (`/api/profiles/user/calendar*`, doc-link validation) — PR: (not opened yet)
+- [x] Calendar REST API (`/api/profiles/user/calendar*`, doc-link validation) — PR: branch `feat/calendar-rest-api` (not pushed/opened yet)
 - [ ] Svelte frontend (editor, workspace list, calendar view) — PR: (not opened yet)
 
 ## Progress Log
@@ -37,6 +37,14 @@ calendar task requires linking an existing document. Full design in
   create/get/update/delete/list, duplicate name (409), invalid name (400), invalid JSON body
   (400), and missing document (404). `cmd/mnemo` now runs an actual HTTP server
   (`MNEMO_ADDR`, default `:8080`). Manually curl-tested end to end. Not yet pushed/PR'd.
+- 2026-08-30 — Sub-task 3 done on `feat/calendar-rest-api`: `internal/calendar` (Task/Status,
+  JSON-file-backed Service behind a `DocumentChecker` interface satisfied by `workspace.Manager`
+  — Create rejects a `document_name` that doesn't exist via `ErrDocumentNotFound`) plus
+  `/api/profiles/user/calendar*` REST routes (list/create/patch/delete). Unit tests for the
+  service and `httptest` integration tests for the routes, including the reject-missing-document
+  case. `cmd/mnemo` now wires the calendar service to `calendars/user.json`. Curl-tested end to
+  end: POSTing a task with a bogus `document_name` returns 400, a real one returns 201. Not yet
+  pushed/PR'd.
 
 ## Issues & Resolutions
 

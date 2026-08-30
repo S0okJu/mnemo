@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/S0okJu/mnemo/backend/internal/calendar"
 	"github.com/S0okJu/mnemo/backend/internal/httpapi"
 	"github.com/S0okJu/mnemo/backend/internal/profile"
 	"github.com/S0okJu/mnemo/backend/internal/workspace"
@@ -33,13 +34,15 @@ func run() error {
 		return err
 	}
 	docs := workspace.NewManager(profiles.WorkspaceDir(profile.UserProfileName))
+	calendarPath := filepath.Join(dataDir, "calendars", profile.UserProfileName+".json")
+	tasks := calendar.NewService(calendarPath, docs)
 
 	addr := os.Getenv("MNEMO_ADDR")
 	if addr == "" {
 		addr = ":8080"
 	}
 
-	mux := httpapi.NewRouter(profiles, docs)
+	mux := httpapi.NewRouter(profiles, docs, tasks)
 	log.Printf("mnemo listening on %s (data dir %s)", addr, dataDir)
 	return http.ListenAndServe(addr, mux)
 }
