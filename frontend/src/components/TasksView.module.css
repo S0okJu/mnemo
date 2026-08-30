@@ -1,0 +1,22 @@
+.tasksView {
+  display: flex;
+  gap: 2.5rem;
+  padding: 1.75rem 2rem;
+  align-items: flex-start;
+}
+
+.mainCol {
+  flex: 1;
+  min-width: 0;
+}
+
+.miniCalendar {
+  width: 220px;
+  flex-shrink: 0;
+  padding-top: 0.25rem;
+}
+
+.tasksView h1 {
+  font-size: 1.3rem;
+  margin: 0 0 1rem;
+}

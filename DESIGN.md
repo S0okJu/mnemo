@@ -17,7 +17,7 @@ Mnemo는 agentic 원격 마크다운 웹 에디터다. hermes 같은 AI 에이�
 | 영역 | 선택 | 비고 |
 |---|---|---|
 | 백엔드 | Go | 파일 시스템 관리, API 서버, 워치 기능 |
-| 프론트엔드 | TypeScript + Svelte | 에디터 UI, 캘린더 뷰 |
+| 프론트엔드 | TypeScript + React | 에디터 UI, 캘린더 뷰 |
 | 저장소 | 로컬 파일 시스템 | DB는 추후 지원, 1차는 파일 기반 |
 
 로컬 파일 기반으로 시작하는 이유는 profile/workspace가 "폴더 = 문서 저장소" 구조와 자연스럽게
@@ -27,7 +27,7 @@ Mnemo는 agentic 원격 마크다운 웹 에디터다. hermes 같은 AI 에이�
 
 ```
                      ┌─────────────────────────┐
-                     │   Svelte Frontend        │
+                     │   React Frontend         │
                      │  - Markdown Editor        │
                      │  - Calendar View          │
                      │  - Workspace Browser      │

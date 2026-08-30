@@ -1,0 +1,129 @@
+.fileTree {
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  height: 100%;
+  overflow-y: auto;
+  padding: 0.6rem 0.5rem;
+  box-sizing: border-box;
+}
+
+.treeHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.2rem 0.3rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.chevron {
+  display: inline-block;
+  margin-right: 0.15rem;
+  font-size: 0.7rem;
+}
+
+.iconButton {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  line-height: 1;
+  color: var(--muted);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.iconButton:hover {
+  background: var(--hover-bg);
+  color: var(--text);
+}
+
+.newDocForm {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.4rem 0.3rem 0.6rem;
+}
+
+.newDocForm input {
+  font-size: 0.85rem;
+  padding: 0.3rem 0.45rem;
+}
+
+.formActions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.formActions button {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.fileTree ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fileTree li {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+}
+
+.fileTree li:hover {
+  background: var(--hover-bg);
+}
+
+.selected {
+  background: var(--active-bg);
+}
+
+.empty {
+  color: var(--muted);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem;
+}
+
+.docButton {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  text-align: left;
+  padding: 0.35rem 0.4rem;
+  font-size: 0.88rem;
+  color: var(--text);
+  min-width: 0;
+}
+
+.fileName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.delete {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 0.95rem;
+  padding: 0.2rem 0.5rem;
+  visibility: hidden;
+}
+
+.fileTree li:hover .delete {
+  visibility: visible;
+}
+
+.delete:hover {
+  color: var(--text);
+}
