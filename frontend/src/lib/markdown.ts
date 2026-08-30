@@ -10,5 +10,7 @@ export function renderMarkdown(body: string): string {
 }
 
 export function htmlToMarkdown(html: string): string {
-  return turndownService.turndown(DOMPurify.sanitize(html));
+  // Strip zero-width spaces left behind as caret anchors by the formatted
+  // editor's inline markdown-shortcut handling (see FormattedEditor.tsx).
+  return turndownService.turndown(DOMPurify.sanitize(html)).replace(/​/g, "");
 }
