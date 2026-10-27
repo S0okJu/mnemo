@@ -1,0 +1,14 @@
+image: postgres:17.6-bookworm
+existingSecret: mnemo-database
+storage:
+  size: 10Gi
+  storageClass: ''
+  local:
+    enabled: false
+    nodeName: ''
+    path: ''
+service:
+  port: 5432
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: '1', memory: 1Gi}

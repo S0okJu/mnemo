@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  type: {{ .Values.service.type }}
+  selector: {app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: api}
+  ports:
+    - name: https
+      port: {{ .Values.service.port }}
+      targetPort: https
+      {{- if .Values.service.nodePort }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
+    {{- if .Values.http.enabled }}
+    - name: http
+      port: {{ .Values.http.port }}
+      targetPort: http
+      {{- if .Values.http.nodePort }}
+      nodePort: {{ .Values.http.nodePort }}
+      {{- end }}
+    {{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels: {app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: api}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/instance: {{ .Release.Name }}, app.kubernetes.io/component: api}
+    spec:
+      serviceAccountName: {{ .Release.Name }}
+      terminationGracePeriodSeconds: 30
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{ toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext: {runAsNonRoot: true, runAsUser: 65532, fsGroup: 65532}
+      containers:
+        - name: api
+          image: {{ include "mnemo.serverImage" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - {name: https, containerPort: 8443}
+            {{- if .Values.http.enabled }}
+            - {name: http, containerPort: 8080}
+            {{- end }}
+          env:
+            {{- if .Values.http.enabled }}
+            - {name: MNEMO_ALLOW_HTTP, value: 'true'}
+            - {name: MNEMO_HTTP_NO_AUTH, value: {{ .Values.http.noAuth | quote }}}
+            - {name: MNEMO_HTTP_LISTEN, value: ':8080'}
+            {{- if not .Values.http.noAuth }}
+            - name: MNEMO_HTTP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.existingSecret }}, key: http-admin-password}
+            - name: MNEMO_HTTP_VIEWER_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.existingSecret }}, key: http-viewer-password}
+            {{- end }}
+            {{- end }}
+            - name: MNEMO_DATABASE_URL
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.existingSecret }}, key: database-url}
+            - name: MNEMO_ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef: {name: {{ .Values.existingSecret }}, key: encryption-key}
+            - {name: MNEMO_ALLOW_EXEC_AUTH, value: {{ .Values.auth.allowExec | quote }}}
+            - {name: MNEMO_EXEC_ALLOWLIST, value: {{ join "," .Values.auth.execAllowlist | quote }}}
+            - {name: MNEMO_EXEC_ENV_ALLOWLIST, value: {{ join "," .Values.auth.execEnvAllowlist | quote }}}
+            - {name: MNEMO_COLLECTION_MAX_RESOURCES, value: {{ .Values.collection.maxSnapshotResources | quote }}}
+            - {name: MNEMO_COLLECTION_INTERVAL_SECONDS, value: {{ .Values.collection.intervalSeconds | quote }}}
+            - {name: MNEMO_SSE_HEARTBEAT_SECONDS, value: {{ .Values.sse.heartbeatSeconds | quote }}}
+            - {name: MNEMO_SSE_QUEUE_SIZE, value: {{ .Values.sse.queueSize | quote }}}
+            - {name: MNEMO_SSE_MAX_SUBSCRIBERS, value: {{ .Values.sse.maxSubscribers | quote }}}
+            - {name: MNEMO_DB_MAX_CONNECTIONS, value: {{ .Values.database.maxConnections | quote }}}
+            - {name: MNEMO_REQUIRE_TLS_VERIFY, value: {{ .Values.collection.requireTLSVerify | quote }}}
+            - {name: MNEMO_ALLOW_KUBECONFIG_OVERRIDE, value: {{ .Values.collection.allowKubeconfigOverride | quote }}}
+            - {name: MNEMO_CLIENT_CA_FILE, value: /etc/mnemo/client/ca.crt}
+            - {name: MNEMO_TLS_CERT_FILE, value: /etc/mnemo/tls/tls.crt}
+            - {name: MNEMO_TLS_KEY_FILE, value: /etc/mnemo/tls/tls.key}
+            {{- if .Values.kubeconfigSecret }}
+            - {name: MNEMO_BOOTSTRAP_KUBECONFIG, value: /etc/mnemo/cluster/config}
+            {{- end }}
+            {{- if .Values.frontend.enabled }}
+            - {name: MNEMO_FRONTEND_URL, value: 'http://{{ .Release.Name }}-frontend:3000'}
+            {{- end }}
+          resources: {{ toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          startupProbe:
+            httpGet: {path: /livez, port: https, scheme: HTTPS}
+            failureThreshold: 30
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: {path: /livez, port: https, scheme: HTTPS}
+            periodSeconds: 10
+          readinessProbe:
+            httpGet: {path: /readyz, port: https, scheme: HTTPS}
+            periodSeconds: 5
+          volumeMounts:
+            - {name: tls, mountPath: /etc/mnemo/tls, readOnly: true}
+            - {name: client-ca, mountPath: /etc/mnemo/client, readOnly: true}
+            {{- if .Values.kubeconfigSecret }}
+            - {name: kubeconfig, mountPath: /etc/mnemo/cluster, readOnly: true}
+            {{- end }}
+      volumes:
+        - name: tls
+          secret: {secretName: {{ .Values.tlsSecret }}}
+        - name: client-ca
+          secret: {secretName: {{ .Values.clientCASecret }}}
+        {{- if .Values.kubeconfigSecret }}
+        - name: kubeconfig
+          secret: {secretName: {{ .Values.kubeconfigSecret }}}
+        {{- end }}

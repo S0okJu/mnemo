@@ -1,0 +1,29 @@
+{{- if .Values.storage.local.enabled }}
+# Single-node test storage only. This directory and PV survive Helm uninstall.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Release.Namespace }}-{{ .Release.Name }}-data
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  capacity:
+    storage: {{ .Values.storage.size }}
+  volumeMode: Filesystem
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: {{ .Values.storage.storageClass | quote }}
+  claimRef:
+    namespace: {{ .Release.Namespace }}
+    name: data-{{ .Release.Name }}-0
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values: [{{ required "storage.local.nodeName is required" .Values.storage.local.nodeName | quote }}]
+  hostPath:
+    path: {{ required "storage.local.path is required" .Values.storage.local.path | quote }}
+    type: DirectoryOrCreate
+{{- end }}

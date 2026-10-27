@@ -1,0 +1,6 @@
+.env*
+config
+*.key
+*.pem
+*.test
+coverage*

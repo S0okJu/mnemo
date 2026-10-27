@@ -1,0 +1,11 @@
+.git
+.next
+.next-live
+node_modules
+.env*
+config
+server
+*.key
+*.pem
+test-results
+playwright-report

@@ -1,0 +1,35 @@
+# Temporary operator tooling only. This Pod is never part of the application.
+# It can access the node image cache; uninstall this release after importing.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 3600
+  automountServiceAccountToken: false
+  nodeSelector:
+    kubernetes.io/hostname: {{ .Values.nodeName | quote }}
+  containers:
+    - name: loader
+      image: {{ .Values.image | quote }}
+      command: [sh, -c, 'sleep 3500']
+      resources:
+        requests: {cpu: 10m, memory: 32Mi}
+        limits: {cpu: 500m, memory: 256Mi}
+      securityContext:
+        runAsUser: 0
+        privileged: true
+        readOnlyRootFilesystem: true
+      volumeMounts:
+        - {name: host, mountPath: /host, readOnly: true}
+        - {name: staging, mountPath: /staging}
+  volumes:
+    - name: host
+      hostPath: {path: /, type: Directory}
+    - name: staging
+      hostPath:
+        path: {{ .Values.stagingPath | quote }}
+        type: DirectoryOrCreate

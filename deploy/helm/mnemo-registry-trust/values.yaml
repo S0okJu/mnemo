@@ -1,0 +1,4 @@
+nodeName: node1
+registry: 192.168.50.27:30003
+caCertificate: ''
+image: alpine:3.22.1

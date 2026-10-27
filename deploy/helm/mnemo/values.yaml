@@ -1,0 +1,48 @@
+replicas: 1
+image:
+  repository: 192.168.50.27:30003/mnemo/server
+  tag: 0.1.0-dev
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+existingSecret: mnemo-server
+clientCASecret: mnemo-client-ca
+tlsSecret: mnemo-tls
+kubeconfigSecret: ''
+service:
+  type: ClusterIP
+  port: 8443
+  nodePort: null
+http:
+  enabled: false
+  noAuth: false
+  port: 8080
+  nodePort: null
+database:
+  maxConnections: 10
+migration:
+  timeout: 2m
+  activeDeadlineSeconds: 180
+sse:
+  heartbeatSeconds: 15
+  queueSize: 1
+  maxSubscribers: 256
+auth:
+  allowExec: false
+  execAllowlist: []
+  execEnvAllowlist: []
+collection:
+  maxSnapshotResources: 100000
+  intervalSeconds: 30
+  requireTLSVerify: true
+  allowKubeconfigOverride: false
+frontend:
+  enabled: false
+  image: 192.168.50.27:30003/mnemo/frontend:0.1.0-dev
+resources:
+  requests: {cpu: 100m, memory: 256Mi}
+  limits: {cpu: '2', memory: 1Gi}
+ingress:
+  enabled: false
+  className: nginx
+  host: mnemo.test

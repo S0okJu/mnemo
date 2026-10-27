@@ -1,0 +1,28 @@
+# Verified 2026-10-26: Kubernetes v1.34.3, node1 amd64, Kube-OVN CRDs.
+# No ingress controller or StorageClass is installed. NodePort preserves mTLS
+# and SSE end to end; ingress verification remains a separate release gate.
+image:
+  repository: 192.168.50.27:30003/mnemo/server
+  tag: 0.1.0-test-20261026-4
+  digest: sha256:b380f810427aa4de0371016d6134ebccfa414d95cf6add12a2d4a4aacc975ed5
+  pullPolicy: Always
+frontend:
+  enabled: true
+  image: 192.168.50.27:30003/mnemo/frontend@sha256:436b4b48179c971586c11b9f0eb0b53cd508ba9fe2f9e04aaff3f2c9c694dfd0
+service:
+  type: NodePort
+  port: 8443
+  nodePort: 30443
+collection:
+  requireTLSVerify: true
+  allowKubeconfigOverride: false
+
+imagePullSecrets:
+  - name: mnemo-harbor-pull
+
+# Explicit user authorization: expose authenticated HTTP in this test environment.
+http:
+  enabled: true
+  noAuth: true
+  port: 8080
+  nodePort: 30080

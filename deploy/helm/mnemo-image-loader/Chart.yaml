@@ -1,0 +1,5 @@
+apiVersion: v2
+name: mnemo-image-loader
+description: Temporary single-node test image staging; uninstall after importing
+version: 0.1.0
+type: application

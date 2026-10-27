@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}
+data:
+  ca.crt: |
+{{ required "caCertificate is required; pass the public Harbor CA via --set-file" .Values.caCertificate | indent 4 }}
+  hosts.toml: |
+    server = "https://{{ .Values.registry }}"
+    [host."https://{{ .Values.registry }}"]
+      capabilities = ["pull", "resolve"]
+      ca = "/etc/containerd/certs.d/{{ .Values.registry }}/ca.crt"
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ .Release.Name }}-{{ .Release.Revision }}
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 90
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      nodeSelector:
+        kubernetes.io/hostname: {{ .Values.nodeName | quote }}
+      containers:
+        - name: install-ca
+          image: {{ .Values.image | quote }}
+          command:
+            - sh
+            - -ec
+            - |
+              for file in ca.crt hosts.toml; do
+                if test -f "/registry/$file" && ! cmp -s "/config/$file" "/registry/$file"; then
+                  cp -n "/registry/$file" "/registry/$file.before-mnemo"
+                fi
+                cp "/config/$file" "/registry/$file"
+                chmod 644 "/registry/$file"
+              done
+          securityContext:
+            runAsUser: 0
+            privileged: true
+            readOnlyRootFilesystem: true
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
+          volumeMounts:
+            - {name: config, mountPath: /config, readOnly: true}
+            - {name: registry, mountPath: /registry}
+      volumes:
+        - name: config
+          configMap: {name: {{ .Release.Name }}}
+        - name: registry
+          hostPath:
+            path: /etc/containerd/certs.d/{{ .Values.registry }}
+            type: DirectoryOrCreate

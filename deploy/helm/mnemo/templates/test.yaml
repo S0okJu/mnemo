@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ .Release.Name }}-smoke
+  annotations:
+    helm.sh/hook: test
+    # Keep this single completed Pod for `helm test --logs`. The next test
+    # removes it before creation; successful migration Jobs use their own TTL.
+    helm.sh/hook-delete-policy: before-hook-creation
+spec:
+  activeDeadlineSeconds: 60
+  restartPolicy: Never
+  automountServiceAccountToken: false
+  securityContext: {runAsNonRoot: true, runAsUser: 65532}
+  containers:
+    - name: readiness
+      image: curlimages/curl:8.14.1
+      args: [--fail, --silent, --show-error, --max-time, '15', --cacert, /ca/ca.crt, 'https://{{ .Release.Name }}:{{ .Values.service.port }}/readyz']
+      resources:
+        requests: {cpu: 10m, memory: 16Mi}
+        limits: {cpu: 100m, memory: 64Mi}
+      volumeMounts: [{name: ca, mountPath: /ca, readOnly: true}]
+  volumes:
+    - name: ca
+      secret: {secretName: {{ .Values.clientCASecret }}}

@@ -1,0 +1,3 @@
+nodeName: node1
+image: alpine:3.22.1
+stagingPath: /var/lib/mnemo-test/image-cache

@@ -1,0 +1,30 @@
+import { pluginResourceDefinitions } from "@/features/plugins/registry/plugins";
+export const resourceApiPaths: Record<string, string> = {
+  Node: "nodes",
+  Namespace: "namespaces",
+  Pod: "pods",
+  Deployment: "deployments",
+  DaemonSet: "daemonsets",
+  StatefulSet: "statefulsets",
+  ReplicaSet: "replicasets",
+  Job: "jobs",
+  CronJob: "cronjobs",
+  Service: "services",
+  Ingress: "ingresses",
+  NetworkPolicy: "network-policies",
+  ConfigMap: "configmaps",
+  Secret: "secrets",
+  PersistentVolume: "persistent-volumes",
+  PersistentVolumeClaim: "persistent-volume-claims",
+  RbacRole: "rbac/roles",
+  RbacRoleBinding: "rbac/role-bindings",
+  RbacServiceAccount: "rbac/service-accounts",
+  KyvernoPolicy: "kyverno/policies",
+  KyvernoPolicyReport: "kyverno/policy-reports",
+  ...Object.fromEntries(
+    pluginResourceDefinitions.map((resource) => [
+      resource.kind,
+      resource.apiPath,
+    ]),
+  ),
+};

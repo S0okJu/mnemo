@@ -1,0 +1,9 @@
+# Verified single-node test topology. No dynamic storage provisioner is present.
+# This path is dedicated to mnemo-test; both the PV and PVC retain data.
+storage:
+  size: 10Gi
+  storageClass: mnemo-test-static
+  local:
+    enabled: true
+    nodeName: node1
+    path: /var/lib/mnemo-test/postgresql
